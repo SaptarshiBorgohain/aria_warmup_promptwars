@@ -5,7 +5,7 @@ import { AlertTriangle, MapPin, Activity, ShieldAlert, Clock, Hash } from 'lucid
 import { TriageResult } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
 interface ActionDashboardProps {
   triage: Partial<TriageResult> | null;
@@ -13,15 +13,15 @@ interface ActionDashboardProps {
 }
 
 export function ActionDashboard({ triage, isStreaming }: ActionDashboardProps) {
-  const [sessionData, setSessionData] = useState({ seq: '00000', id: 'INCD-00000', time: '00:00:00' });
-  
-  useEffect(() => {
-    setSessionData({
+  // Calculate static metadata values right before render on every new triage event if it changes
+  const sessionData = useMemo(() => {
+    return {
       seq: String(Math.floor(Date.now() / 1000)).slice(-5),
       id: `INCD-${Math.floor(Math.random() * 90000) + 10000}`,
       time: format(new Date(), 'HH:mm:ss')
-    });
-  }, [triage]);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triage?.triage_level, triage?.patient_summary]);
 
   if (!triage) {
     return (

@@ -1,63 +1,118 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { MultimodalDropzone } from '@/components/MultimodalDropzone';
+import { ActionDashboard } from '@/components/ActionDashboard';
+import { EmergencyMap } from '@/components/EmergencyMap';
+import { TriageResult } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ShieldAlert } from 'lucide-react';
 
 export default function Home() {
+  const [triage, setTriage] = useState<Partial<TriageResult> | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAnalyze = async (formData: FormData) => {
+    setIsStreaming(true);
+    setTriage(null);
+    setError('');
+    let accumulated = '';
+    
+    try {
+      const response = await fetch('/api/triage', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const txt = await response.text();
+        throw new Error(txt || 'Request failed');
+      }
+      
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder('utf-8');
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          accumulated += decoder.decode(value, { stream: true });
+          
+          try {
+            // Attempt to parse intermediate valid JSON
+            const parsed = JSON.parse(accumulated);
+            setTriage(parsed);
+          } catch {
+            // Ignore partial JSON parsing errors
+          }
+        }
+        
+        try {
+          // Final parse
+          const parsed = JSON.parse(accumulated);
+          setTriage(parsed);
+        } catch {
+          console.error("Failed to parse the final response:", accumulated);
+          setError("Data parsing error: The response model didn't return perfect JSON.");
+        }
+      }
+
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(err);
+      setError(message);
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-background flex flex-col">
+      <header className="border-b bg-card px-8 py-4 flex items-center justify-between shadow-sm z-10">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 bg-black dark:bg-white rounded-full flex justify-center items-center">
+             <ShieldAlert className="h-5 w-5 text-white dark:text-black" />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight">ARIA</h1>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex items-center gap-2 max-md:hidden">
+          <span className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mr-4">Google Hackathon</span>
+          <span className="text-xs bg-muted px-2 py-1 rounded-md font-medium text-muted-foreground">Adaptive Real-world Intelligence Assistant</span>
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 grid gap-6 lg:grid-cols-[1fr_400px]">
+        {/* Main Content Column */}
+        <div className="space-y-6 flex flex-col">
+          <section aria-label="Input Section">
+            <h2 className="text-lg font-bold mb-3">Incoming Signal Feed</h2>
+            <MultimodalDropzone onSubmit={handleAnalyze} isStreaming={isStreaming} />
+          </section>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>System Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <section className="flex-1" aria-label="System Analysis Result">
+             <ActionDashboard triage={triage} isStreaming={isStreaming} />
+          </section>
+        </div>
+
+        {/* Side Sidebar Column */}
+        <div className="space-y-6 flex flex-col h-full h-[600px] lg:h-auto">
+          <section className="flex flex-col h-full" aria-label="Routing & Logistics Map">
+             <div className="flex items-center justify-between mb-3 shadow-none">
+                <h2 className="text-lg font-bold">Emergency Routing</h2>
+             </div>
+             <div className="flex-1">
+                <EmergencyMap />
+             </div>
+          </section>
         </div>
       </main>
     </div>

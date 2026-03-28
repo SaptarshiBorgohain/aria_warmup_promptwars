@@ -1,0 +1,9 @@
+.github
+.env.local
+.git
+.next
+node_modules
+Dockerfile
+.dockerignore
+package-lock.json
+README.md

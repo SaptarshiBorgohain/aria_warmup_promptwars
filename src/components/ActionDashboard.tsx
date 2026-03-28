@@ -10,9 +10,11 @@ import { useMemo } from 'react';
 interface ActionDashboardProps {
   triage: Partial<TriageResult> | null;
   isStreaming: boolean;
+  activeResource?: string | null;
+  onResourceClick?: (resource: string) => void;
 }
 
-export function ActionDashboard({ triage, isStreaming }: ActionDashboardProps) {
+export function ActionDashboard({ triage, isStreaming, activeResource, onResourceClick }: ActionDashboardProps) {
   // Calculate static metadata values right before render on every new triage event if it changes
   const sessionData = useMemo(() => {
     return {
@@ -179,11 +181,24 @@ export function ActionDashboard({ triage, isStreaming }: ActionDashboardProps) {
               <MapPin className="h-4 w-4" /> Dispatched Resources Map Pin
             </h3>
             <div className="flex flex-wrap gap-2">
-               {triage.recommended_resources.map((res, i) => (
-                 <Badge key={i} variant="secondary" className="px-3 py-1.5 text-sm bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-100 hover:bg-blue-200 border-blue-200 dark:border-blue-800 transition-colors">
-                   {res}
-                 </Badge>
-               ))}
+               {triage.recommended_resources.map((res, i) => {
+                 const isActive = activeResource === res;
+                 return (
+                   <button
+                     key={i}
+                     onClick={() => onResourceClick?.(res)}
+                     className={`px-3 py-1.5 text-sm rounded-md transition-all border ${
+                       isActive 
+                         ? 'bg-blue-500 text-white border-blue-600 shadow-md ring-2 ring-blue-300 dark:ring-blue-800' 
+                         : 'bg-blue-100/80 text-blue-800 border-blue-200 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-100 dark:border-blue-800 dark:hover:bg-blue-800/80'
+                     }`}
+                     aria-pressed={isActive}
+                     title="Click to locate on map"
+                   >
+                     {res}
+                   </button>
+                 );
+               })}
             </div>
           </motion.div>
         )}

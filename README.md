@@ -22,6 +22,7 @@ ARIA is an AI-driven multimodal emergency medical triage assistant designed for 
 ### Environment Variables
 
 Create a `.env.local` file with the following keys:
+
 - `GEMINI_API_KEY`: Your Google AI Studio API key.
 - `FALL_BACK_OPENAI`: (Optional) Your OpenAI API key for redundancy.
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`: Your Google Maps JavaScript API key.
@@ -36,6 +37,7 @@ npm run dev
 ## 🏗️ Docker Build
 
 To build the production-ready image:
+
 ```bash
 docker build \
   --build-arg NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here \
@@ -51,4 +53,4 @@ docker build \
 - **Google Services:** Dual usage of Gemini and Maps/Places integration.
 
 ---
-*Created for the Prompt Wars Hackathon 2026*
+## Project Attribution

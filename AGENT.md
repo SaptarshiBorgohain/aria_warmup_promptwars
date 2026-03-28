@@ -18,5 +18,7 @@
 - **Build Mode:** Standalone production build enabled (`output: standalone`).
 - **Deployment:** Multi-stage Dockerfile verified with `ARG` build-time injection for Maps API keys.
 
+- **Build Fix:** Removed `package-lock.json` from `.dockerignore` to resolve `npm ci` build stage failures.
+
 ---
-*Updated: 2026-03-28T14:46:58+05:30*
+*Updated: 2026-03-28T14:55:00+05:30*
